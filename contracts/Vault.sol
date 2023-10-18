@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 /**
  * @title MockLendingProtocol
@@ -67,7 +68,7 @@ contract MockLendingProtocol {
  * @title Vault
  * @dev A vault contract that interacts with a mock lending protocol.
  */
-contract Vault is ERC20Upgradeable, OwnableUpgradeable, AccessControlUpgradeable {
+contract Vault is ReentrancyGuardUpgradeable, ERC20Upgradeable, OwnableUpgradeable, AccessControlUpgradeable {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     MockLendingProtocol public lendingProtocol;
@@ -95,7 +96,7 @@ contract Vault is ERC20Upgradeable, OwnableUpgradeable, AccessControlUpgradeable
      * @dev Deposit tokens into the vault.
      * @param amount Amount of tokens to deposit.
      */
-    function deposit(uint256 amount) external {
+    function deposit(uint256 amount) external nonReentrant {
         require(amount > 0, "Amount should be greater than 0");
         uint256 totalTokens = token.balanceOf(address(this)) + lendingProtocol.balanceOf(address(this));
         uint256 issuingShares = (totalTokens == 0 || totalSupply() == 0) ? amount : amount * totalSupply() / totalTokens;
@@ -107,7 +108,7 @@ contract Vault is ERC20Upgradeable, OwnableUpgradeable, AccessControlUpgradeable
      * @dev Supply tokens from the vault to the lending protocol.
      * @param amount Amount of tokens to supply.
      */
-    function supplyToLendingProtocol(uint256 amount) external onlyManager {
+    function supplyToLendingProtocol(uint256 amount) external onlyManager nonReentrant {
         token.approve(address(lendingProtocol), amount);
         lendingProtocol.supply(amount);
     }
@@ -116,7 +117,7 @@ contract Vault is ERC20Upgradeable, OwnableUpgradeable, AccessControlUpgradeable
      * @dev Withdraw tokens from the lending protocol to the vault.
      * @param amount Amount of tokens to withdraw.
      */
-    function withdrawFromLendingProtocol(uint256 amount) external onlyManager {
+    function withdrawFromLendingProtocol(uint256 amount) external onlyManager nonReentrant {
         lendingProtocol.withdraw(amount);
     }
 
@@ -124,14 +125,11 @@ contract Vault is ERC20Upgradeable, OwnableUpgradeable, AccessControlUpgradeable
      * @dev Withdraw tokens from the vault based on shares.
      * @param shares Number of shares to withdraw against.
      */
-    function withdraw(uint256 shares) external {
+    function withdraw(uint256 shares) external nonReentrant {
         require(shares > 0 && shares <= balanceOf(_msgSender()), "Invalid share amount");
-        uint256 totalTokens = token.balanceOf(address(this)) + lendingProtocol.balanceOf(address(this));
-        uint256 withdrawAmount = shares * totalTokens/ totalSupply();
 
-//        if (withdrawAmount > 0) {
-//            mockToken.transfer(_msgSender(), withdrawAmount);
-//        }
+        uint256 totalTokens = token.balanceOf(address(this)) + lendingProtocol.balanceOf(address(this));
+        uint256 withdrawAmount = shares * totalTokens / totalSupply();
 
         _burn(_msgSender(), shares);
         token.transfer(_msgSender(), withdrawAmount);
@@ -162,7 +160,7 @@ contract Vault is ERC20Upgradeable, OwnableUpgradeable, AccessControlUpgradeable
         grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     }
 
-    function suppliedTokens() external view returns (uint256) {
+    function totalDeposited() external view returns (uint256) {
         return token.balanceOf(address(this)) + lendingProtocol.balanceOf(address(this));
     }
 
