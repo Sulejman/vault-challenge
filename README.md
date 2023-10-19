@@ -48,20 +48,21 @@ The Vault is a smart contract designed to allow users to deposit tokens, which w
 
 **Shares Issued on Deposit:**
 
-Given that the total value held in the vault is \( $V$ \) and the total number of shares issued is \( $S$ \), when a user deposits an amount \( $D$ \), the number of shares to be issued, \( $\text{newShares}$ \), can be computed as:
+Given that the total value held in the vault is \( $Vault_{\text{balance}}$ \) and the total number of shares issued is \( $Total_{\text{vTKN}}$ \), when a user deposits an amount \( $Deposit_{\text{amount}}$ \), the number of shares to be issued, \( $vTKN_{\text{issued}}$ \), can be computed as:
 
-$$\text{newShares} = \left( \frac{D \times S}{V} \right)$$
+$$vTKN_{\text{issued}} = \left( \frac{ Vault_{\text{balance}} \times Total_{\text{vTKN}}}{Deposit_{\text{amount}}} \right)$$
 
 **Amount on Withdrawal:**
 
 When a user wishes to redeem their vault token shares, \( $vTKN_{\text{redeemed}}$ \), the amount they would receive from the vault, \( ${Withdraw_{\text{amount}}}$ \), can be determined by:
 
 $$
-{Withdraw_{\text{amount}}} = \frac
+{Withdraw_{\text{amount}}} =\left( \frac
 {vTKN_{\text{redeemed}}
 \times
 Vault_{\text{balance}}}
 {Total_{\text{vTKN}}}
+\right)
 $$
 
 
